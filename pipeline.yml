@@ -1,0 +1,64 @@
+resource_types: ###################################################################################
+# https://github.com/zlabjp/kubernetes-resource
+- name: kubernetes
+  type: docker-image
+  source:
+    repository: zlabjp/kubernetes-resource
+    tag: "1.11"
+
+resources: ########################################################################################
+- name: knative-docs-git
+  type: git
+  source:
+    uri: git@github.com:jchesterpivotal/docs.git
+    branch: master
+    private_key: ((github-private-key))
+- name: hello-world-image
+  type: docker-image
+  source:
+    repository: us.gcr.io/cf-elafros-dog/hello-world-image
+    username: _json_key
+    password: ((gcr-json-key))
+- name: gke-cluster
+  type: kubernetes
+  source:
+    server: https://104.154.212.194
+    token: ((gke-cluster-token))
+    certificate_authority: ((gke-cluster-ca))
+
+jobs: #############################################################################################
+- name: build-helloworld-ruby-image
+  plan:
+  - get: knative-docs-git
+    trigger: true
+  - put: hello-world-image
+    params:
+      build: knative-docs-git/serving/samples/helloworld-ruby
+- name: deploy-helloworld-ruby
+  plan:
+  - get: knative-docs-git
+    passed: [build-helloworld-ruby-image]
+  - get: hello-world-image
+    trigger: true
+    passed: [build-helloworld-ruby-image]
+  - task: edit-service-yaml
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      inputs:
+        - name: knative-docs-git
+      outputs:
+        - name: deployment-yaml
+      run:
+        path: bash
+        args:
+          - '-c'
+          - |
+            sed -e 's/docker.io\/{username}/us.gcr.io\/cf-elafros-dog/g' \
+            knative-docs-git/serving/samples/helloworld-ruby/service.yaml \
+            | tee deployment-yaml/service.yaml
+  - put: gke-cluster
+    params:
+      kubectl: apply -f deployment-yaml/service.yaml
