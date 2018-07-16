@@ -1,19 +1,34 @@
-#!/usr/bin/env bash
+#!/usr/bin/env ruby
 
-set -o errexit
-set -o nounset
-set -o pipefail
+require 'yaml'
 
-DOCKER_IMAGE_DIGEST=$(cat hello-world-image/digest)
+docker_image_digest = File.read('hello-world-image/digest').chomp
+git_ref = File.read('knative-docs-git/.git/ref').chomp
 
-echo
-echo Rewriting Knative Service YAML
-echo
+added_k8s_labels = <<-LABELS
+metadata:
+  git-ref/knative-docs-git: #{git_ref}
+  image-digest/hello-world-image: #{docker_image_digest}
+LABELS
+added_k8s_labels.chomp!
 
-sed "s/docker.io\/{username}\/helloworld-ruby/us.gcr.io\/cf-elafros-dog\/hello-world-image@$DOCKER_IMAGE_DIGEST/g" \
-knative-docs-git/serving/samples/helloworld-ruby/service.yaml | \
-tee deployment-yaml/service.yaml
+service_yaml = File.read('knative-docs-git/serving/samples/helloworld-ruby/service.yaml')
 
-echo
-echo Done.
-echo
+puts
+puts 'Rewriting Knative Service YAML'
+puts
+
+service_yaml.gsub!('metadata:', added_k8s_labels)
+service_yaml.gsub!('docker.io', 'us.gcr.io')
+service_yaml.gsub!('{username}', 'cf-elafros-dog')
+service_yaml.gsub!('image: helloworld-ruby', "image: hello-world-image@#{docker_image_digest}".chomp)
+
+# puts service_yaml
+
+File.write('deployment-yaml/service.yaml', service_yaml)
+
+puts `cat deployment-yaml/service.yaml`
+
+puts
+puts 'Done.'
+puts
