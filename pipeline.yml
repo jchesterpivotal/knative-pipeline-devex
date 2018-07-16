@@ -18,8 +18,7 @@ resources: #####################################################################
 - name: knative-pipeline-devex-git
   type: git
   source:
-    uri: git@github.com:jchesterpivotal/knative-pipeline-devex.git
-    private_key: ((github-private-key))
+    uri: https://github.com/jchesterpivotal/knative-pipeline-devex.git
 
 - name: hello-world-image
   type: docker-image
