@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+sed -e 's/docker.io\/{username}/us.gcr.io\/cf-elafros-dog/g' \
+knative-docs-git/serving/samples/helloworld-ruby/service.yaml | \
+tee deployment-yaml/service.yaml
