@@ -17,3 +17,6 @@ outputs:
 
 run:
   path: knative-pipeline-devex-git/tasks/knative-service-yaml/run
+
+params:
+  GCR_REPOSITORY:
