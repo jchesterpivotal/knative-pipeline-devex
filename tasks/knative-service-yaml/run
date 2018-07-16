@@ -2,13 +2,15 @@
 
 require 'yaml'
 
-docker_image_digest = File.read('hello-world-image/digest').chomp
 git_ref = File.read('knative-docs-git/.git/ref').chomp
+docker_image_digest = File.read('hello-world-image/digest').chomp
 
 added_k8s_labels = <<-LABELS
-metadata:
-  git-ref/knative-docs-git: #{git_ref}
-  image-digest/hello-world-image: #{docker_image_digest}
+      revisionTemplate:
+        metadata:
+          annotations:
+            git-ref/knative-docs-git: #{git_ref}
+            image-digest/hello-world-image: #{docker_image_digest}
 LABELS
 added_k8s_labels.chomp!
 
@@ -18,7 +20,7 @@ puts
 puts 'Rewriting Knative Service YAML'
 puts
 
-service_yaml.gsub!('metadata:', added_k8s_labels)
+service_yaml.gsub!('      revisionTemplate:', added_k8s_labels)
 service_yaml.gsub!('docker.io', 'us.gcr.io')
 service_yaml.gsub!('{username}', 'cf-elafros-dog')
 service_yaml.gsub!('/helloworld-ruby', "/hello-world-image@#{docker_image_digest}".chomp)
