@@ -10,7 +10,7 @@ echo
 echo Rewriting Knative Service YAML
 echo
 
-sed "s/docker.io\/{username}\/helloworld-ruby/us.gcr.io\/cf-elafros-dog\/helloworld-ruby@$DOCKER_IMAGE_DIGEST/g" \
+sed "s/docker.io\/{username}\/helloworld-ruby/us.gcr.io\/cf-elafros-dog\/hello-world-image@$DOCKER_IMAGE_DIGEST/g" \
 knative-docs-git/serving/samples/helloworld-ruby/service.yaml | \
 tee deployment-yaml/service.yaml
 
