@@ -8,6 +8,7 @@ image_resource:
 inputs:
   - name: knative-pipeline-devex-git
   - name: knative-docs-git
+  - name: hello-world-image
 
 outputs:
   - name: deployment-yaml

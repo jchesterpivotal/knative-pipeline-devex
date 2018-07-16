@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 
-sed -e 's/docker.io\/{username}/us.gcr.io\/cf-elafros-dog/g' \
+set -o errexit
+set -o nounset
+set -o pipefail
+
+DOCKER_IMAGE_DIGEST=$(cat hello-world-image/digest)
+
+echo
+echo Rewriting Knative Service YAML
+echo
+
+sed "s/docker.io\/{username}\/helloworld-ruby/us.gcr.io\/cf-elafros-dog\/helloworld-ruby@$DOCKER_IMAGE_DIGEST/g" \
 knative-docs-git/serving/samples/helloworld-ruby/service.yaml | \
 tee deployment-yaml/service.yaml
+
+echo
+echo Done.
+echo
