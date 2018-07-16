@@ -10,7 +10,7 @@ resources: #####################################################################
 - name: knative-docs-git
   type: git
   source:
-    uri: git@github.com:jchesterpivotal/docs.git
+    uri: git@github.com:knative/docs.git
     branch: master
     private_key: ((github-private-key))
 - name: hello-world-image
