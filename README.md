@@ -20,8 +20,10 @@ You need to put these secrets into this file:
 
 * `github-private-key`: This is the private key from an SSH keypair that you have added to your account.
 * `gcr-json-key`: This is the JSON key used to identify a service account on your GCP Project.
-* `gke-cluster-token`: Your bearer token from logging into GKE. Copy and paste from your kubeconfig.
 * `gke-cluster-ca`: The cluster CA certificate. This is also in kubeconfig, but base64 encoded. You will need to decode it first.
+* `gke-cluster-token`: Your bearer token from logging into GKE. You can get this with `gcloud auth application-default print-access-token`. On MacOS you might consider using `gcloud auth application-default print-access-token | pbcopy` so that the token doesn't appear in your terminal history.
+
+Each time you edit `secrets.yaml`, you will need to run `fly set-pipeline` again.
 
 If you check in a `secrets.yaml`, I accept no responsibility. I do however judge you. Don't do it.
 
