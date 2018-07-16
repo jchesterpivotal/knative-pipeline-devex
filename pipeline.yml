@@ -23,14 +23,14 @@ resources: #####################################################################
 - name: hello-world-image
   type: docker-image
   source:
-    repository: us.gcr.io/cf-elafros-dog/hello-world-image
+    repository: ((hello-world-image-repository))
     username: _json_key
     password: ((gcr-json-key))
 
 - name: gke-cluster
   type: kubernetes
   source:
-    server: https://104.154.212.194
+    server: ((gke-cluster-address))
     token: ((gke-cluster-token))
     certificate_authority: ((gke-cluster-ca))
 

@@ -6,11 +6,15 @@ This repo shows a simple example pipeline for going from a git commit to running
 
 Assuming you have a Concourse setup:
 
-		fly -t knative-poc \
+    fly -t knative-poc \
     set-pipeline \
     --pipeline devex \
     --config pipeline.yml \
+    --var hello-world-image-repository=us.gcr.io/$(gcloud config get-value project)/hello-world-image \
+    --var gke-cluster-address=YOUR-GKE-ADDRESS-HERE \
     --load-vars-from secrets.yaml
+
+Replacing `YOUR-GKE-ADDRESS-HERE` with the cluster master. You can find it with `kubectl cluster-info`. I tried to do another magical subshell but the output is colourised.
 
 ### `secrets.yaml`
 
