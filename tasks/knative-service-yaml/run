@@ -21,7 +21,7 @@ puts
 service_yaml.gsub!('metadata:', added_k8s_labels)
 service_yaml.gsub!('docker.io', 'us.gcr.io')
 service_yaml.gsub!('{username}', 'cf-elafros-dog')
-service_yaml.gsub!('image: helloworld-ruby', "image: hello-world-image@#{docker_image_digest}".chomp)
+service_yaml.gsub!('/helloworld-ruby', "/hello-world-image@#{docker_image_digest}".chomp)
 
 puts service_yaml
 
