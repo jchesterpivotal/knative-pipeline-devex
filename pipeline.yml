@@ -25,7 +25,7 @@ resources: #####################################################################
   source:
     repository: ((hello-world-image-repository))
     username: _json_key
-    password: ((gcr-json-key))
+    password: ((gcp-service-account-json-key))
 
 - name: gke-cluster
   type: kubernetes
