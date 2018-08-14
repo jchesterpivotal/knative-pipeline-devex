@@ -1,12 +1,15 @@
 resource_types: ###################################################################################
-# https://github.com/zlabjp/kubernetes-resource
-- name: kubernetes
+
+- name: knative-service
   type: docker-image
   source:
-    repository: zlabjp/kubernetes-resource
-    tag: "1.11"
+    repository: gcr.io/cf-elafros-dog/knative-service-resource
+    username: _json_key
+    password: ((gcp-service-account-json-key))
 
 resources: ########################################################################################
+
+## Git Repos ##
 
 - name: knative-docs-git
   type: git
@@ -15,10 +18,7 @@ resources: #####################################################################
     branch: master
     private_key: ((github-private-key))
 
-- name: knative-pipeline-devex-git
-  type: git
-  source:
-    uri: https://github.com/jchesterpivotal/knative-pipeline-devex.git
+## Images ##
 
 - name: hello-world-image
   type: docker-image
@@ -27,12 +27,15 @@ resources: #####################################################################
     username: _json_key
     password: ((gcp-service-account-json-key))
 
-- name: gke-cluster
-  type: kubernetes
+## Knative Services ##
+
+- name: helloworld-ruby-knative-service
+  type: knative-service
   source:
-    server: ((gke-cluster-address))
-    token: ((gke-cluster-token))
-    certificate_authority: ((gke-cluster-ca))
+    name: helloworld-ruby
+    kubernetes_uri: ((gke-cluster-address))
+    kubernetes_token: ((gke-cluster-token))
+    kubernetes_ca: ((gke-cluster-ca))
 
 jobs: #############################################################################################
 
@@ -47,17 +50,31 @@ jobs: ##########################################################################
 
 - name: deploy-helloworld-ruby
   plan:
-  - get: knative-pipeline-devex-git
-  - get: knative-docs-git
-    passed: [build-helloworld-ruby-image]
   - get: hello-world-image
     trigger: true
     passed: [build-helloworld-ruby-image]
-  - task: edit-service-yaml
-    file: knative-pipeline-devex-git/tasks/knative-service-yaml/task.yml
     params:
-      GCR_REPOSITORY: ((hello-world-image-repository))
-  - put: gke-cluster
+      skip_download: true
+  - put: helloworld-ruby-knative-service
     params:
-      kubectl: apply -f deployment-yaml/service.yaml
-      wait_until_ready: 60
+      image_repository: ((hello-world-image-repository))
+      image_digest_path: hello-world-image/digest
+
+- name: react-after-deployment
+  plan:
+  - get: helloworld-ruby-knative-service
+    trigger: true
+    version: every
+    passed: [deploy-helloworld-ruby]
+  - task: echo-yaml
+    config:
+      platform: linux
+      inputs:
+      - name: helloworld-ruby-knative-service
+      image_resource:
+        type: docker-image
+        source: {repository: busybox}
+      run:
+        path: cat
+        args:
+        - helloworld-ruby-knative-service/configuration.yaml
