@@ -47,16 +47,3 @@ You need to:
 
 * Delete your `secrets.yaml`
 * Destroy the service account.
-
-## Appendix: Setting Up A Concourse
-
-I'm using the [Helm chart for Concourse](https://github.com/kubernetes/charts/tree/master/stable/concourse), with some adjustments in `concourse-chart-values.yaml`. My command line is:
-
-    helm install \
-      stable/concourse \
-    --replace \
-    --name concourse \
-    --namespace concourse \
-    --values concourse-chart-values.yaml
-
-**THIS IS NOT A SECURED CONCOURSE INSTALLATION. Do _NOT_ use it for production.**
