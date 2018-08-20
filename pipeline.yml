@@ -40,6 +40,7 @@ resources: #####################################################################
 jobs: #############################################################################################
 
 - name: build-helloworld-ruby-image
+  public: true
   plan:
   - get: knative-docs-git
     trigger: true
@@ -49,6 +50,7 @@ jobs: ##########################################################################
       build: knative-docs-git/serving/samples/helloworld-ruby
 
 - name: deploy-helloworld-ruby
+  public: true
   plan:
   - get: hello-world-image
     trigger: true
@@ -61,6 +63,7 @@ jobs: ##########################################################################
       image_digest_path: hello-world-image/digest
 
 - name: react-after-deployment
+  public: true
   plan:
   - get: helloworld-ruby-knative-service
     trigger: true
@@ -78,3 +81,4 @@ jobs: ##########################################################################
         path: cat
         args:
         - helloworld-ruby-knative-service/configuration.yaml
+
