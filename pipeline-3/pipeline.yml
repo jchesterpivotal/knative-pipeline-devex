@@ -33,6 +33,14 @@ resources: #####################################################################
 
 ## Knative Services ##
 
+- name: knative-service-test
+  type: knative-service
+  source:
+    name: app-test
+    kubernetes_uri: ((gke-cluster-address))
+    kubernetes_token: ((gke-cluster-token))
+    kubernetes_ca: ((gke-cluster-ca))
+
 - name: knative-service-prod
   type: knative-service
   source:
@@ -64,8 +72,7 @@ jobs: ##########################################################################
       params:
         alert_type: failed
 
-
-- name: deploy-app
+- name: deploy-app-to-test
   public: true
   plan:
   - get: app-image
@@ -73,25 +80,28 @@ jobs: ##########################################################################
     passed: [build-app-image]
     params:
       skip_download: true
+  - put: knative-service-test
+    params:
+      image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-3
+      image_digest_path: app-image/digest
+    <<: *alert_on_outcome
+
+- name: deploy-app-to-prod
+  public: true
+  plan:
+  - get: app-image
+    trigger: true
+    passed: [build-app-image, deploy-app-to-test]
+    params:
+      skip_download: true
   - put: slack
     params:
       alert_type: started
   - put: knative-service-prod
     params:
-      image_repository: ((app-image-repository))
+      image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-3
       image_digest_path: app-image/digest
-    on_success:
-      put: slack
-      params:
-        alert_type: success
-    on_failure:
-      put: slack
-      params:
-        alert_type: failed
-    on_abort:
-      put: slack
-      params:
-        alert_type: aborted
+    <<: *alert_on_outcome
 
 - name: react-after-deployment
   public: true
@@ -99,7 +109,7 @@ jobs: ##########################################################################
   - get: knative-service-prod
     trigger: true
     version: every
-    passed: [deploy-app]
+    passed: [deploy-app-to-prod]
   - task: echo-yaml
     config:
       platform: linux
@@ -113,3 +123,18 @@ jobs: ##########################################################################
         args:
         - knative-service-prod/configuration.yaml
 
+
+########### shared
+alert_on_outcome: &alert_on_outcome
+  on_success:
+    put: slack
+    params:
+      alert_type: success
+  on_failure:
+    put: slack
+    params:
+      alert_type: failed
+  on_abort:
+    put: slack
+    params:
+      alert_type: aborted

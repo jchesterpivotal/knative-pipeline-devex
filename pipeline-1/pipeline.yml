@@ -28,17 +28,17 @@ resources: #####################################################################
 
 ## Knative Services ##
 
-- name: knative-service
+- name: knative-service-prod
   type: knative-service
   source:
-    name: helloworld-ruby
+    name: app-production
     kubernetes_uri: ((gke-cluster-address))
     kubernetes_token: ((gke-cluster-token))
     kubernetes_ca: ((gke-cluster-ca))
 
 jobs: #############################################################################################
 
-- name: build-helloworld-ruby-image
+- name: build-app-image
   public: true
   plan:
   - get: knative-devex-git
@@ -48,15 +48,15 @@ jobs: ##########################################################################
     params:
       build: knative-devex-git/app
 
-- name: deploy-helloworld-ruby
+- name: deploy-app
   public: true
   plan:
   - get: app-image
     trigger: true
-    passed: [build-helloworld-ruby-image]
+    passed: [build-app-image]
     params:
       skip_download: true
-  - put: knative-service
+  - put: knative-service-prod
     params:
       image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-1
       image_digest_path: app-image/digest
@@ -64,20 +64,20 @@ jobs: ##########################################################################
 - name: react-after-deployment
   public: true
   plan:
-  - get: knative-service
+  - get: knative-service-prod
     trigger: true
     version: every
-    passed: [deploy-helloworld-ruby]
+    passed: [deploy-app]
   - task: echo-yaml
     config:
       platform: linux
       inputs:
-      - name: knative-service
+      - name: knative-service-prod
       image_resource:
         type: docker-image
         source: {repository: busybox}
       run:
         path: cat
         args:
-        - knative-service/configuration.yaml
+        - knative-service-prod/configuration.yaml
 
