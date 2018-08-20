@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
+echo
 echo Performing fake smoke test
-ech0
+echo
+
 echo Sleeps for 10 seconds to resemble some sort of testingness
 
 sleep 10
 
+echo
 echo Done.
+echo
