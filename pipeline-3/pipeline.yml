@@ -86,12 +86,24 @@ jobs: ##########################################################################
       image_digest_path: app-image/digest
     <<: *alert_on_outcome
 
+- name: run-smoke-tests
+  public: true
+  plan:
+  - get: knative-devex-git
+    trigger: true
+    version: every
+    passed: [build-app-image]
+  - get: app-image
+    passed: [build-app-image, deploy-app-to-test]
+  - task: smoke-test
+    file: knative-devex-git/tasks/fake-smoke-test/task.yml
+
 - name: deploy-app-to-prod
   public: true
   plan:
   - get: app-image
     trigger: true
-    passed: [build-app-image, deploy-app-to-test]
+    passed: [build-app-image, deploy-app-to-test, run-smoke-tests]
     params:
       skip_download: true
   - put: slack

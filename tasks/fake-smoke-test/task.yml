@@ -1,0 +1,11 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: ubuntu
+    tag: '18.04'
+
+run:
+  path: tasks/smoke-test/run
