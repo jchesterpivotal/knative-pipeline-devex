@@ -10,7 +10,7 @@ Assuming you have a Concourse setup:
     set-pipeline \
     --pipeline devex \
     --config pipeline.yml \
-    --var hello-world-image-repository=us.gcr.io/$(gcloud config get-value project)/hello-world-image \
+    --var app-image-repository=us.gcr.io/$(gcloud config get-value project)/app-image \
     --var gke-cluster-token=$(gcloud auth application-default print-access-token)
     --var gke-cluster-address=YOUR-GKE-ADDRESS-HERE \
     --load-vars-from secrets.yaml

@@ -11,25 +11,24 @@ resources: #####################################################################
 
 ## Git Repos ##
 
-- name: knative-docs-git
+- name: knative-devex-git
   type: git
   source:
-    uri: git@github.com:knative/docs.git
+    uri: https://github.com/jchesterpivotal/knative-pipeline-devex.git
     branch: master
-    private_key: ((github-private-key))
 
 ## Images ##
 
-- name: hello-world-image
+- name: app-image
   type: docker-image
   source:
-    repository: ((hello-world-image-repository))
+    repository: ((app-image-repository))
     username: _json_key
     password: ((gcp-service-account-json-key))
 
 ## Knative Services ##
 
-- name: helloworld-ruby-knative-service
+- name: knative-service
   type: knative-service
   source:
     name: helloworld-ruby
@@ -42,30 +41,30 @@ jobs: ##########################################################################
 - name: build-helloworld-ruby-image
   public: true
   plan:
-  - get: knative-docs-git
+  - get: knative-devex-git
     trigger: true
     version: every
-  - put: hello-world-image
+  - put: app-image
     params:
-      build: knative-docs-git/serving/samples/helloworld-ruby
+      build: knative-devex-git/app
 
 - name: deploy-helloworld-ruby
   public: true
   plan:
-  - get: hello-world-image
+  - get: app-image
     trigger: true
     passed: [build-helloworld-ruby-image]
     params:
       skip_download: true
-  - put: helloworld-ruby-knative-service
+  - put: knative-service
     params:
-      image_repository: ((hello-world-image-repository))
-      image_digest_path: hello-world-image/digest
+      image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-1
+      image_digest_path: app-image/digest
 
 - name: react-after-deployment
   public: true
   plan:
-  - get: helloworld-ruby-knative-service
+  - get: knative-service
     trigger: true
     version: every
     passed: [deploy-helloworld-ruby]
@@ -73,12 +72,12 @@ jobs: ##########################################################################
     config:
       platform: linux
       inputs:
-      - name: helloworld-ruby-knative-service
+      - name: knative-service
       image_resource:
         type: docker-image
         source: {repository: busybox}
       run:
         path: cat
         args:
-        - helloworld-ruby-knative-service/configuration.yaml
+        - knative-service/configuration.yaml
 
