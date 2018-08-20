@@ -74,6 +74,7 @@ jobs: ##########################################################################
 
 - name: deploy-app-to-test
   public: true
+  serial_groups: [testing]
   plan:
   - get: app-image
     trigger: true
@@ -88,13 +89,17 @@ jobs: ##########################################################################
 
 - name: run-smoke-tests
   public: true
+  serial_groups: [testing]
   plan:
   - get: knative-devex-git
+  - get: knative-service-test
+    passed: [deploy-app-to-test]
+  - get: app-image
     trigger: true
     version: every
-    passed: [build-app-image]
-  - get: app-image
-    passed: [build-app-image, deploy-app-to-test]
+    passed: [deploy-app-to-test]
+    params:
+      skip_download: true
   - task: smoke-test
     file: knative-devex-git/tasks/fake-smoke-test/task.yml
 
@@ -103,7 +108,7 @@ jobs: ##########################################################################
   plan:
   - get: app-image
     trigger: true
-    passed: [build-app-image, deploy-app-to-test, run-smoke-tests]
+    passed: [run-smoke-tests]
     params:
       skip_download: true
   - put: slack
