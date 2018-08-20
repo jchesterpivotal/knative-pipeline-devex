@@ -1,0 +1,268 @@
+resource_types: ###################################################################################
+
+- name: knative-service
+  type: docker-image
+  source:
+    repository: gcr.io/cf-elafros-dog/knative-service-resource
+    username: _json_key
+    password: ((gcp-service-account-json-key))
+
+- name: slack-alert
+  type: docker-image
+  source:
+    repository: arbourd/concourse-slack-alert-resource
+
+resources: ########################################################################################
+
+## Git Repos ##
+
+- name: knative-devex-git
+  type: git
+  source:
+    uri: https://github.com/jchesterpivotal/knative-pipeline-devex.git
+    branch: master
+
+## Images ##
+
+- name: app-image
+  type: docker-image
+  source:
+    repository: ((app-image-repository))
+    username: _json_key
+    password: ((gcp-service-account-json-key))
+
+## Knative Services ##
+
+- name: knative-service-test
+  type: knative-service
+  source:
+    name: app-test
+    kubernetes_uri: ((gke-cluster-address))
+    kubernetes_token: ((gke-cluster-token))
+    kubernetes_ca: ((gke-cluster-ca))
+
+- name: knative-service-prod
+  type: knative-service
+  source:
+    name: app-production
+    kubernetes_uri: ((gke-cluster-address))
+    kubernetes_token: ((gke-cluster-token))
+    kubernetes_ca: ((gke-cluster-ca))
+
+- name: knative-service-prod-2
+  type: knative-service
+  source:
+    name: app-production-2
+    kubernetes_uri: ((gke-cluster-address))
+    kubernetes_token: ((gke-cluster-token))
+    kubernetes_ca: ((gke-cluster-ca))
+
+- name: knative-service-prod-3
+  type: knative-service
+  source:
+    name: app-production-3
+    kubernetes_uri: ((gke-cluster-address))
+    kubernetes_token: ((gke-cluster-token))
+    kubernetes_ca: ((gke-cluster-ca))
+
+## Times ##
+
+- name: every-10-minutes-during-working-hours
+  type: time
+  source:
+    interval: 10m
+    location: America/New_York
+    start: 9 AM
+    stop: 6 PM
+
+## Slack ##
+
+- name: slack
+  type: slack-alert
+  source:
+    url: ((slack-inbound-webhook))
+    disable: true
+
+jobs: #############################################################################################
+
+- name: build-app-image
+  public: true
+  plan:
+  - get: knative-devex-git
+    trigger: true
+    version: every
+  - put: app-image
+    params:
+      build: knative-devex-git/app
+    <<: *alert_on_badness
+
+- name: deploy-app-to-test
+  public: true
+  serial_groups: [testing]
+  plan:
+  - get: app-image
+    trigger: true
+    passed: [build-app-image]
+    params:
+      skip_download: true
+  - put: knative-service-test
+    params:
+      image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-3
+      image_digest_path: app-image/digest
+    <<: *alert_on_badness
+
+- name: run-smoke-tests
+  public: true
+  serial_groups: [testing]
+  plan:
+  - get: knative-devex-git
+  - get: knative-service-test
+    passed: [deploy-app-to-test]
+  - get: app-image
+    trigger: true
+    version: every
+    passed: [deploy-app-to-test]
+    params:
+      skip_download: true
+  - task: smoke-test
+    file: knative-devex-git/tasks/fake-smoke-test/task.yml
+    <<: *alert_on_badness
+
+- name: run-container-analysis
+  public: true
+  plan:
+  - get: knative-devex-git
+  - get: app-image
+    trigger: true
+    version: every
+    passed: [build-app-image]
+    params:
+      skip_download: true
+  - task: smoke-test
+    file: knative-devex-git/tasks/fake-container-analysis/task.yml
+    <<: *alert_on_badness
+
+- name: deploy-app-to-prod
+  public: true
+  plan:
+  - get: app-image
+    trigger: true
+    passed: [run-smoke-tests, run-container-analysis]
+    params:
+      skip_download: true
+  - put: slack
+    params:
+      alert_type: started
+  - put: knative-service-prod
+    params:
+      image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-3
+      image_digest_path: app-image/digest
+    <<: *alert_on_everything
+
+- name: deploy-app-to-prod-2-and-3
+  public: true
+  plan:
+  - get: every-10-minutes-during-working-hours
+    trigger: true
+  - get: app-image
+    passed: [run-smoke-tests, run-container-analysis]
+    params:
+      skip_download: true
+  - put: slack
+    params:
+      alert_type: started
+  - aggregate:
+    - put: knative-service-prod-2
+      params:
+        image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-3
+        image_digest_path: app-image/digest
+      <<: *alert_on_everything
+    - put: knative-service-prod-3
+      params:
+        image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-3
+        image_digest_path: app-image/digest
+      <<: *alert_on_everything
+
+- name: react-after-deployment
+  public: true
+  plan:
+  - get: knative-service-prod
+    trigger: true
+    version: every
+    passed: [deploy-app-to-prod]
+  - task: echo-yaml
+    config:
+      platform: linux
+      inputs:
+      - name: knative-service-prod
+      image_resource:
+        type: docker-image
+        source: {repository: busybox}
+      run:
+        path: cat
+        args:
+        - knative-service-prod/configuration.yaml
+
+- name: react-after-deployment-2-and-3
+  public: true
+  plan:
+  - aggregate:
+    - get: knative-service-prod-2
+      trigger: true
+      version: every
+      passed: [deploy-app-to-prod-2-and-3]
+    - get: knative-service-prod-3
+      trigger: true
+      version: every
+      passed: [deploy-app-to-prod-2-and-3]
+  - aggregate:
+    - task: echo-yaml-from-prod-2
+      config:
+        platform: linux
+        inputs:
+        - name: knative-service-prod-2
+        image_resource:
+          type: docker-image
+          source: {repository: busybox}
+        run:
+          path: cat
+          args:
+          - knative-service-prod-2/configuration.yaml
+    - task: echo-yaml-from-prod-3
+      config:
+        platform: linux
+        inputs:
+        - name: knative-service-prod-3
+        image_resource:
+          type: docker-image
+          source: {repository: busybox}
+        run:
+          path: cat
+          args:
+          - knative-service-prod-3/configuration.yaml
+
+########################### Alerts shared YAML ###########################
+
+alert_on_badness: &alert_on_badness
+  on_failure:
+    put: slack
+    params:
+      alert_type: failed
+  on_abort:
+    put: slack
+    params:
+      alert_type: aborted
+
+alert_on_everything: &alert_on_everything
+  on_success:
+    put: slack
+    params:
+      alert_type: success
+  on_failure:
+    put: slack
+    params:
+      alert_type: failed
+  on_abort:
+    put: slack
+    params:
+      alert_type: aborted

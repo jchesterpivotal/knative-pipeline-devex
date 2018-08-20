@@ -18,6 +18,38 @@ spec:
 apiVersion: serving.knative.dev/v1alpha1
 kind: Service
 metadata:
+  name: app-production-2
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        metadata:
+          annotations:
+            concourseBuild: ''
+        spec:
+          container:
+            image: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-1
+---
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: app-production-3
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        metadata:
+          annotations:
+            concourseBuild: ''
+        spec:
+          container:
+            image: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-1
+---
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
   name: app-test
   namespace: default
 spec:
