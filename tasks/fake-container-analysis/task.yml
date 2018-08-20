@@ -1,0 +1,14 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: ubuntu
+    tag: '18.04'
+
+inputs:
+- name: knative-devex-git
+
+run:
+  path: knative-devex-git/tasks/fake-container-analysis/run
