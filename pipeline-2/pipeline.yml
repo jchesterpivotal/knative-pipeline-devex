@@ -1,0 +1,116 @@
+resource_types: ###################################################################################
+
+- name: knative-service
+  type: docker-image
+  source:
+    repository: gcr.io/cf-elafros-dog/knative-service-resource
+    username: _json_key
+    password: ((gcp-service-account-json-key))
+
+- name: slack-alert
+  type: docker-image
+  source:
+    repository: arbourd/concourse-slack-alert-resource
+
+resources: ########################################################################################
+
+## Git Repos ##
+
+- name: knative-docs-git
+  type: git
+  source:
+    uri: git@github.com:knative/docs.git
+    branch: master
+    private_key: ((github-private-key))
+
+## Images ##
+
+- name: hello-world-image
+  type: docker-image
+  source:
+    repository: ((hello-world-image-repository))
+    username: _json_key
+    password: ((gcp-service-account-json-key))
+
+## Knative Services ##
+
+- name: helloworld-ruby-knative-service
+  type: knative-service
+  source:
+    name: helloworld-ruby
+    kubernetes_uri: ((gke-cluster-address))
+    kubernetes_token: ((gke-cluster-token))
+    kubernetes_ca: ((gke-cluster-ca))
+
+## Slack ##
+
+- name: slack
+  type: slack-alert
+  source:
+    url: ((slack-inbound-webhook))
+
+jobs: #############################################################################################
+
+- name: build-helloworld-ruby-image
+  public: true
+  plan:
+  - get: knative-docs-git
+    trigger: true
+    version: every
+  - put: hello-world-image
+    params:
+      build: knative-docs-git/serving/samples/helloworld-ruby
+    on_failure:
+      put: slack
+      params:
+        alert_type: failed
+
+
+- name: deploy-helloworld-ruby
+  public: true
+  plan:
+  - get: hello-world-image
+    trigger: true
+    passed: [build-helloworld-ruby-image]
+    params:
+      skip_download: true
+  - put: slack
+    params:
+      alert_type: started
+  - put: helloworld-ruby-knative-service
+    params:
+      image_repository: ((hello-world-image-repository))
+      image_digest_path: hello-world-image/digest
+    on_success:
+      put: slack
+      params:
+        alert_type: success
+    on_failure:
+      put: slack
+      params:
+        alert_type: failed
+    on_abort:
+      put: slack
+      params:
+        alert_type: aborted
+
+- name: react-after-deployment
+  public: true
+  plan:
+  - get: helloworld-ruby-knative-service
+    trigger: true
+    version: every
+    passed: [deploy-helloworld-ruby]
+  - task: echo-yaml
+    config:
+      platform: linux
+      inputs:
+      - name: helloworld-ruby-knative-service
+      image_resource:
+        type: docker-image
+        source: {repository: busybox}
+      run:
+        path: cat
+        args:
+        - helloworld-ruby-knative-service/configuration.yaml
+
