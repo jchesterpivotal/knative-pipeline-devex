@@ -67,10 +67,7 @@ jobs: ##########################################################################
   - put: app-image
     params:
       build: knative-devex-git/app
-    on_failure:
-      put: slack
-      params:
-        alert_type: failed
+    <<: *alert_on_badness
 
 - name: deploy-app-to-test
   public: true
@@ -85,7 +82,7 @@ jobs: ##########################################################################
     params:
       image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-3
       image_digest_path: app-image/digest
-    <<: *alert_on_outcome
+    <<: *alert_on_badness
 
 - name: run-smoke-tests
   public: true
@@ -102,6 +99,7 @@ jobs: ##########################################################################
       skip_download: true
   - task: smoke-test
     file: knative-devex-git/tasks/fake-smoke-test/task.yml
+    <<: *alert_on_badness
 
 - name: deploy-app-to-prod
   public: true
@@ -118,7 +116,7 @@ jobs: ##########################################################################
     params:
       image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-3
       image_digest_path: app-image/digest
-    <<: *alert_on_outcome
+    <<: *alert_on_everything
 
 - name: react-after-deployment
   public: true
@@ -140,9 +138,19 @@ jobs: ##########################################################################
         args:
         - knative-service-prod/configuration.yaml
 
+########################### Alerts shared YAML ###########################
 
-########### shared
-alert_on_outcome: &alert_on_outcome
+alert_on_badness: &alert_on_badness
+  on_failure:
+    put: slack
+    params:
+      alert_type: failed
+  on_abort:
+    put: slack
+    params:
+      alert_type: aborted
+
+alert_on_everything: &alert_on_everything
   on_success:
     put: slack
     params:
