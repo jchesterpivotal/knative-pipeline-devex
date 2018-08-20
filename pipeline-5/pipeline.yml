@@ -165,7 +165,7 @@ jobs: ##########################################################################
   - get: every-10-minutes-during-working-hours
     trigger: true
   - get: app-image
-    passed: [run-smoke-tests, run-container-analysis, deploy-app-to-prod]
+    passed: [deploy-app-to-prod]
     params:
       skip_download: true
   - put: slack
@@ -183,7 +183,7 @@ jobs: ##########################################################################
   - get: every-10-minutes-during-working-hours
     trigger: true
   - get: app-image
-    passed: [run-smoke-tests, run-container-analysis, deploy-app-to-prod]
+    passed: [deploy-app-to-prod]
     params:
       skip_download: true
   - put: slack
