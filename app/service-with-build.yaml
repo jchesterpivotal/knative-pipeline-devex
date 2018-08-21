@@ -1,0 +1,30 @@
+---
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: app-production-before
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      build:
+        serviceAccountName: builder
+        source:
+          git:
+            url: https://github.com/jchesterpivotal/knative-pipeline-devex
+            revision: master
+          subPath: app
+        template:
+          name: kaniko
+          arguments:
+          - name: IMAGE
+            value: &image us.gcr.io/cf-elafros-dog/knative-devex-kaniko
+      revisionTemplate:
+        metadata:
+          annotations:
+            concourseBuild: ''
+        spec:
+          container:
+            image: *image
+            imagePullPolicy: Always
+
