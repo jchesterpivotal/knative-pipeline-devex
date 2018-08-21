@@ -54,8 +54,7 @@ jobs: ##########################################################################
   - get: app-image
     trigger: true
     passed: [build-app-image]
-    params:
-      skip_download: true
+    params: { skip_download: true }
   - put: knative-service-prod
     params:
       image_repository: ((app-image-repository))

@@ -71,8 +71,7 @@ jobs: ##########################################################################
   - get: app-image
     trigger: true
     passed: [build-app-image]
-    params:
-      skip_download: true
+    params: { skip_download: true }
   - put: slack
     params:
       alert_type: started

@@ -104,8 +104,7 @@ jobs: ##########################################################################
   - get: app-image
     trigger: true
     passed: [build-app-image]
-    params:
-      skip_download: true
+    params: { skip_download: true }
   - put: knative-service-test
     params:
       image_repository: ((app-image-repository))
@@ -123,8 +122,7 @@ jobs: ##########################################################################
     trigger: true
     version: every
     passed: [deploy-app-to-test]
-    params:
-      skip_download: true
+    params: { skip_download: true }
   - task: smoke-test
     file: app-git/tasks/fake-smoke-test/task.yml
     <<: *alert_on_badness
@@ -137,8 +135,7 @@ jobs: ##########################################################################
     trigger: true
     version: every
     passed: [build-app-image]
-    params:
-      skip_download: true
+    params: { skip_download: true }
   - task: container-analysis
     file: app-git/tasks/fake-container-analysis/task.yml
     <<: *alert_on_badness
@@ -149,8 +146,7 @@ jobs: ##########################################################################
   - get: app-image
     trigger: true
     passed: [run-smoke-tests, run-container-analysis]
-    params:
-      skip_download: true
+    params: { skip_download: true }
   - put: slack
     params:
       alert_type: started
