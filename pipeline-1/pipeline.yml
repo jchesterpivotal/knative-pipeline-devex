@@ -58,7 +58,7 @@ jobs: ##########################################################################
       skip_download: true
   - put: knative-service-prod
     params:
-      image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-1
+      image_repository: ((app-image-repository))
       image_digest_path: app-image/digest
 
 - name: react-after-deployment

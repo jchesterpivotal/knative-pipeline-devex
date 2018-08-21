@@ -107,7 +107,7 @@ jobs: ##########################################################################
       skip_download: true
   - put: knative-service-test
     params:
-      image_repository: us.gcr.io/cf-elafros-dog/knative-devex-pipeline-3
+      image_repository: ((app-image-repository))
       image_digest_path: app-image/digest
     <<: *alert_on_badness
 
