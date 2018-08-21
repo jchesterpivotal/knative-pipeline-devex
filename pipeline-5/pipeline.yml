@@ -75,6 +75,7 @@ resources: #####################################################################
     location: America/New_York
     start: 9 AM
     stop: 6 PM
+    days: [Monday, Tuesday, Wednesday, Thursday, Friday]
 
 ## Slack ##
 
