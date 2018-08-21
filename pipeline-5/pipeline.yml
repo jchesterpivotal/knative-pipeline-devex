@@ -11,6 +11,7 @@ resource_types: ################################################################
   type: docker-image
   source:
     repository: arbourd/concourse-slack-alert-resource
+    tag: master
 
 resources: ########################################################################################
 
@@ -138,7 +139,7 @@ jobs: ##########################################################################
     passed: [build-app-image]
     params:
       skip_download: true
-  - task: smoke-test
+  - task: container-analysis
     file: knative-devex-git/tasks/fake-container-analysis/task.yml
     <<: *alert_on_badness
 

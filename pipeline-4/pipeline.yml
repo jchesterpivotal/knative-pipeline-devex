@@ -111,7 +111,7 @@ jobs: ##########################################################################
     passed: [build-app-image]
     params:
       skip_download: true
-  - task: smoke-test
+  - task: container-analysis
     file: knative-devex-git/tasks/fake-container-analysis/task.yml
     <<: *alert_on_badness
 
