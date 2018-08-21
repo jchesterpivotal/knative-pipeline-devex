@@ -157,15 +157,44 @@ jobs: ##########################################################################
       image_digest_path: app-image/digest
     <<: *alert_on_everything
 
+- name: react-after-primary-deployment
+  public: true
+  plan:
+  - get: knative-service-prod
+    trigger: true
+    version: every
+    passed: [deploy-app-to-prod]
+  - task: echo-yaml-from-prod
+    config:
+      platform: linux
+      inputs:
+      - name: knative-service-prod
+      image_resource:
+        type: docker-image
+        source: {repository: busybox}
+      run:
+        path: cat
+        args:
+        - knative-service-prod/configuration.yaml
+
+
+- name: throttle-secondary-deployments
+  public: true
+  plan:
+  - aggregate:
+    - get: every-10-minutes-during-working-hours
+      trigger: true
+    - get: app-image
+      passed: [deploy-app-to-prod]
+      params: { skip_download: true }
+
 - name: deploy-app-to-prod-2
   public: true
   plan:
-  - get: every-10-minutes-during-working-hours
-    trigger: true
   - get: app-image
-    passed: [deploy-app-to-prod]
-    params:
-      skip_download: true
+    passed: [throttle-secondary-deployments]
+    params: { skip_download: true }
+    trigger: true
   - put: slack
     params:
       alert_type: started
@@ -178,12 +207,10 @@ jobs: ##########################################################################
 - name: deploy-app-to-prod-3
   public: true
   plan:
-  - get: every-10-minutes-during-working-hours
-    trigger: true
   - get: app-image
-    passed: [deploy-app-to-prod]
-    params:
-      skip_download: true
+    passed: [throttle-secondary-deployments]
+    params: { skip_download: true }
+    trigger: true
   - put: slack
     params:
       alert_type: started
@@ -193,14 +220,10 @@ jobs: ##########################################################################
       image_digest_path: app-image/digest
     <<: *alert_on_everything
 
-- name: react-after-deployments
+- name: react-after-secondary-deployments
   public: true
   plan:
   - aggregate:
-    - get: knative-service-prod
-      trigger: true
-      version: every
-      passed: [deploy-app-to-prod]
     - get: knative-service-prod-2
       trigger: true
       version: every
@@ -210,18 +233,6 @@ jobs: ##########################################################################
       version: every
       passed: [deploy-app-to-prod-3]
   - aggregate:
-    - task: echo-yaml-from-prod
-      config:
-        platform: linux
-        inputs:
-        - name: knative-service-prod
-        image_resource:
-          type: docker-image
-          source: {repository: busybox}
-        run:
-          path: cat
-          args:
-          - knative-service-prod/configuration.yaml
     - task: echo-yaml-from-prod-2
       config:
         platform: linux
@@ -246,6 +257,7 @@ jobs: ##########################################################################
           path: cat
           args:
           - knative-service-prod-3/configuration.yaml
+
 
 ########################### Alerts shared YAML ###########################
 
