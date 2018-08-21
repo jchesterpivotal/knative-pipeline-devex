@@ -16,7 +16,7 @@ resources: #####################################################################
 
 ## Git Repos ##
 
-- name: knative-devex-git
+- name: app-git
   type: git
   source:
     uri: https://github.com/jchesterpivotal/knative-pipeline-devex.git
@@ -61,12 +61,12 @@ jobs: ##########################################################################
 - name: build-app-image
   public: true
   plan:
-  - get: knative-devex-git
+  - get: app-git
     trigger: true
     version: every
   - put: app-image
     params:
-      build: knative-devex-git/app
+      build: app-git/app
     <<: *alert_on_badness
 
 - name: deploy-app-to-test
@@ -88,7 +88,7 @@ jobs: ##########################################################################
   public: true
   serial_groups: [testing]
   plan:
-  - get: knative-devex-git
+  - get: app-git
   - get: knative-service-test
     passed: [deploy-app-to-test]
   - get: app-image
@@ -98,13 +98,13 @@ jobs: ##########################################################################
     params:
       skip_download: true
   - task: smoke-test
-    file: knative-devex-git/tasks/fake-smoke-test/task.yml
+    file: app-git/tasks/fake-smoke-test/task.yml
     <<: *alert_on_badness
 
 - name: run-container-analysis
   public: true
   plan:
-  - get: knative-devex-git
+  - get: app-git
   - get: app-image
     trigger: true
     version: every
@@ -112,7 +112,7 @@ jobs: ##########################################################################
     params:
       skip_download: true
   - task: container-analysis
-    file: knative-devex-git/tasks/fake-container-analysis/task.yml
+    file: app-git/tasks/fake-container-analysis/task.yml
     <<: *alert_on_badness
 
 - name: deploy-app-to-prod

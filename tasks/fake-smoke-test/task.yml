@@ -8,7 +8,7 @@ image_resource:
     tag: '18.04'
 
 inputs:
-- name: knative-devex-git
+- name: app-git
 
 run:
-  path: knative-devex-git/tasks/fake-smoke-test/run
+  path: app-git/tasks/fake-smoke-test/run

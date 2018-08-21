@@ -16,7 +16,7 @@ resources: #####################################################################
 
 ## Git Repos ##
 
-- name: knative-devex-git
+- name: app-git
   type: git
   source:
     uri: https://github.com/jchesterpivotal/knative-pipeline-devex.git
@@ -53,12 +53,12 @@ jobs: ##########################################################################
 - name: build-app-image
   public: true
   plan:
-  - get: knative-devex-git
+  - get: app-git
     trigger: true
     version: every
   - put: app-image
     params:
-      build: knative-devex-git/app
+      build: app-git/app
     on_failure:
       put: slack
       params:
